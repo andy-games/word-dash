@@ -22,10 +22,95 @@ const CatchphraseGame = () => {
   const [showStats, setShowStats] = useState(false);
   const [losingTeam, setLosingTeam] = useState(null);
   const [showStealPrompt, setShowStealPrompt] = useState(false);
+  const [gameWon, setGameWon] = useState(false);
+  const [winningTeam, setWinningTeam] = useState(null);
   const timerRef = useRef(null);
   const wordTimerRef = useRef(null);
   const tickSoundRef = useRef(null);
   const audioContextRef = useRef(null);
+
+  // LocalStorage key
+  const STORAGE_KEY = 'wordDashGameState';
+
+  // Save game state to localStorage
+  const saveGameState = () => {
+    const gameState = {
+      team1Score,
+      team2Score,
+      currentTeam,
+      selectedCategory,
+      showCategorySelect,
+      losingTeam,
+      roundStats,
+      usedWords,
+      isPlaying,
+      gameOver,
+      showScoreboard,
+      showStats,
+      showStealPrompt,
+      gameWon,
+      winningTeam
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+  };
+
+  // Load game state from localStorage
+  const loadGameState = () => {
+    try {
+      const savedState = localStorage.getItem(STORAGE_KEY);
+      if (savedState) {
+        const gameState = JSON.parse(savedState);
+        setTeam1Score(gameState.team1Score || 0);
+        setTeam2Score(gameState.team2Score || 0);
+        setCurrentTeam(gameState.currentTeam || 1);
+        setSelectedCategory(gameState.selectedCategory || null);
+        setShowCategorySelect(gameState.showCategorySelect !== undefined ? gameState.showCategorySelect : true);
+        setLosingTeam(gameState.losingTeam || null);
+        setRoundStats(gameState.roundStats || { team1Correct: [], team2Correct: [], skipped: [] });
+        setUsedWords(gameState.usedWords || []);
+        setIsPlaying(gameState.isPlaying || false);
+        setGameOver(gameState.gameOver || false);
+        setShowScoreboard(gameState.showScoreboard || false);
+        setShowStats(gameState.showStats || false);
+        setShowStealPrompt(gameState.showStealPrompt || false);
+        setGameWon(gameState.gameWon || false);
+        setWinningTeam(gameState.winningTeam || null);
+        return true;
+      }
+    } catch (error) {
+      console.error('Error loading game state:', error);
+    }
+    return false;
+  };
+
+  // Clear game state from localStorage
+  const clearGameState = () => {
+    localStorage.removeItem(STORAGE_KEY);
+  };
+
+  // Check for win condition
+  const checkWinCondition = (newTeam1Score, newTeam2Score) => {
+    if (newTeam1Score >= 7) {
+      setGameWon(true);
+      setWinningTeam(1);
+      setIsPlaying(false);
+      setGameOver(true);
+      stopTickSound();
+      playBeep(800, 0.5);
+      clearGameState();
+      return true;
+    } else if (newTeam2Score >= 7) {
+      setGameWon(true);
+      setWinningTeam(2);
+      setIsPlaying(false);
+      setGameOver(true);
+      stopTickSound();
+      playBeep(800, 0.5);
+      clearGameState();
+      return true;
+    }
+    return false;
+  };
 
   const playBeep = (frequency, duration) => {
     if (!audioContextRef.current) {
@@ -184,6 +269,12 @@ const CatchphraseGame = () => {
     setShowPassWarning(false);
     setTeam1Score(0);
     setTeam2Score(0);
+    setGameWon(false);
+    setWinningTeam(null);
+    setLosingTeam(null);
+    setShowStats(false);
+    setShowStealPrompt(false);
+    clearGameState();
     stopTickSound();
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -198,9 +289,17 @@ const CatchphraseGame = () => {
     // Correct guesses are for statistical tracking only, not scoring
     const winningTeam = losingTeam === 1 ? 2 : 1;
     if (winningTeam === 1) {
-      setTeam1Score(prev => prev + 1);
+      setTeam1Score(prev => {
+        const newScore = prev + 1;
+        checkWinCondition(newScore, team2Score);
+        return newScore;
+      });
     } else {
-      setTeam2Score(prev => prev + 1);
+      setTeam2Score(prev => {
+        const newScore = prev + 1;
+        checkWinCondition(team1Score, newScore);
+        return newScore;
+      });
     }
     setShowStats(true);
     stopTickSound();
@@ -216,9 +315,17 @@ const CatchphraseGame = () => {
       // If they steal, they get an additional point (they already got 1 point when time ran out)
       const winningTeam = losingTeam === 1 ? 2 : 1;
       if (winningTeam === 1) {
-        setTeam1Score(prev => prev + 1);
+        setTeam1Score(prev => {
+          const newScore = prev + 1;
+          checkWinCondition(newScore, team2Score);
+          return newScore;
+        });
       } else {
-        setTeam2Score(prev => prev + 1);
+        setTeam2Score(prev => {
+          const newScore = prev + 1;
+          checkWinCondition(team1Score, newScore);
+          return newScore;
+        });
       }
     }
     setShowStealPrompt(false);
@@ -316,6 +423,19 @@ const CatchphraseGame = () => {
     };
   }, [isPlaying, currentWord, gameOver, isPaused]);
 
+  // Load game state on mount
+  useEffect(() => {
+    loadGameState();
+  }, []);
+
+  // Save game state whenever it changes
+  useEffect(() => {
+    if (!gameWon) {
+      saveGameState();
+    }
+  }, [team1Score, team2Score, currentTeam, selectedCategory, showCategorySelect, losingTeam, 
+      roundStats, usedWords, isPlaying, gameOver, showScoreboard, showStats, showStealPrompt]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background elements */}
@@ -381,6 +501,31 @@ const CatchphraseGame = () => {
 
           {!showCategorySelect && (
             <>
+              {gameWon && winningTeam ? (
+                <div className="text-center relative py-8">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-orange-500 to-pink-600 opacity-20 animate-pulse rounded-3xl -m-4"></div>
+                  <div className="relative z-10">
+                    <div className="text-8xl mb-6 animate-bounce">🎉</div>
+                    <h1 className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 mb-4 animate-pulse">
+                      TEAM {winningTeam} WINS!
+                    </h1>
+                    <div className={`text-7xl font-black mb-6 ${winningTeam === 1 ? 'text-blue-300' : 'text-pink-300'} drop-shadow-2xl animate-pulse`}>
+                      {winningTeam === 1 ? team1Score : team2Score} - {winningTeam === 1 ? team2Score : team1Score}
+                    </div>
+                    <div className="text-3xl font-bold text-cyan-300 mb-8 animate-pulse">
+                      🏆 CHAMPIONS! 🏆
+                    </div>
+                    <button
+                      onClick={reset}
+                      className="bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white font-bold py-6 px-12 rounded-full text-2xl shadow-2xl transform transition hover:scale-110 border-4 border-cyan-300 animate-bounce"
+                    >
+                      <RotateCcw className="inline mr-2" size={32} />
+                      New Game
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
               <div className="mb-8">
                 <div className={`text-6xl font-bold text-center mb-4 ${timeLeft <= 5 && isPlaying ? 'text-red-400 animate-pulse' : 'text-cyan-300'}`}>
                   {timeLeft}
@@ -585,7 +730,7 @@ const CatchphraseGame = () => {
                 </div>
               )}
 
-              {showScoreboard && (
+              {showScoreboard && !gameWon && (
                 <div className="text-center">
                   <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-6">SCOREBOARD</h2>
                   
@@ -595,13 +740,21 @@ const CatchphraseGame = () => {
                       <div className="text-5xl font-black text-blue-200 mb-3 drop-shadow-lg">{team1Score}</div>
                       <div className="flex gap-2 justify-center">
                         <button
-                          onClick={() => setTeam1Score(team1Score - 1)}
+                          onClick={() => {
+                            const newScore = Math.max(0, team1Score - 1);
+                            setTeam1Score(newScore);
+                            checkWinCondition(newScore, team2Score);
+                          }}
                           className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white font-bold py-2 px-6 rounded-lg border-2 border-red-400"
                         >
                           -
                         </button>
                         <button
-                          onClick={() => setTeam1Score(team1Score + 1)}
+                          onClick={() => {
+                            const newScore = team1Score + 1;
+                            setTeam1Score(newScore);
+                            checkWinCondition(newScore, team2Score);
+                          }}
                           className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-bold py-2 px-6 rounded-lg border-2 border-green-400"
                         >
                           +
@@ -614,13 +767,21 @@ const CatchphraseGame = () => {
                       <div className="text-5xl font-black text-pink-200 mb-3 drop-shadow-lg">{team2Score}</div>
                       <div className="flex gap-2 justify-center">
                         <button
-                          onClick={() => setTeam2Score(team2Score - 1)}
+                          onClick={() => {
+                            const newScore = Math.max(0, team2Score - 1);
+                            setTeam2Score(newScore);
+                            checkWinCondition(team1Score, newScore);
+                          }}
                           className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white font-bold py-2 px-6 rounded-lg border-2 border-red-400"
                         >
                           -
                         </button>
                         <button
-                          onClick={() => setTeam2Score(team2Score + 1)}
+                          onClick={() => {
+                            const newScore = team2Score + 1;
+                            setTeam2Score(newScore);
+                            checkWinCondition(team1Score, newScore);
+                          }}
                           className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-400 hover:to-green-500 text-white font-bold py-2 px-6 rounded-lg border-2 border-green-400"
                         >
                           +
@@ -645,6 +806,8 @@ const CatchphraseGame = () => {
                     </button>
                   </div>
                 </div>
+              )}
+                </>
               )}
             </>
           )}
