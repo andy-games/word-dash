@@ -117,6 +117,8 @@ const CatchphraseGame = () => {
   };
 
   const startGame = () => {
+    // Start with the team that was in possession when the last round ended, or Team 1 for first round
+    const startingTeam = losingTeam || 1;
     setIsPlaying(true);
     setIsPaused(false);
     setGameOver(false);
@@ -124,9 +126,11 @@ const CatchphraseGame = () => {
     setShowStats(false);
     setTimeLeft(60);
     setUsedWords([]);
-    setCurrentTeam(1);
+    setCurrentTeam(startingTeam);
     setRoundStats({ team1Correct: [], team2Correct: [], skipped: [] });
     setCurrentWord(getRandomWord());
+    // Clear losingTeam after using it so it doesn't affect future rounds
+    setLosingTeam(null);
     startTickSound();
   };
 
@@ -222,6 +226,8 @@ const CatchphraseGame = () => {
   };
 
   const nextRound = () => {
+    // Keep losingTeam so the next round can start with that team
+    // losingTeam will be cleared when startGame is called
     setIsPlaying(false);
     setIsPaused(false);
     setGameOver(false);
@@ -233,11 +239,9 @@ const CatchphraseGame = () => {
     setCurrentWord('');
     setUsedWords([]);
     setShowPassWarning(false);
-    setCurrentTeam(1);
     setRoundStats({ team1Correct: [], team2Correct: [], skipped: [] });
     setShowStats(false);
     setShowStealPrompt(false);
-    setLosingTeam(null);
     stopTickSound();
     if (timerRef.current) {
       clearInterval(timerRef.current);
