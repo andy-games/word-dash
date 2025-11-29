@@ -1,99 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, SkipForward, RotateCcw, Zap, ArrowLeft } from 'lucide-react';
+import { categories } from './words';
 
 const CatchphraseGame = () => {
-  const categories = {
-    mixed: {
-      name: "Mixed Bag",
-      icon: "🎲",
-      words: [
-        "Pizza", "Elephant", "Basketball", "Guitar", "Astronaut", "Rainbow", "Volcano",
-        "Skateboard", "Butterfly", "Thunderstorm", "Popcorn", "Penguin", "Helicopter",
-        "Sunglasses", "Waterfall", "Rollercoaster", "Cactus", "Fireworks", "Ninja",
-        "Telescope", "Trampoline", "Dinosaur", "Lighthouse", "Hammock", "Snowman",
-        "Tornado", "Kangaroo", "Motorcycle", "Pyramid", "Microwave", "Dragon",
-        "Saxophone", "Skyscraper", "Octopus", "Parachute", "Submarine", "Treasure",
-        "Unicorn", "Wizard", "Zombie", "Campfire", "Surfboard", "Magazine", "Castle",
-        "Dentist", "Elevator", "Flashlight", "Garden", "Hospital", "Iceberg"
-      ]
-    },
-    popCulture: {
-      name: "Pop Culture",
-      icon: "🎬",
-      words: [
-        "Taylor Swift", "Beyoncé", "Spider-Man", "Harry Potter", "The Beatles", "Oprah Winfrey",
-        "Star Wars", "Marvel", "Disney", "Netflix", "TikTok", "Instagram", "Fortnite",
-        "Drake", "Lady Gaga", "Michael Jackson", "Super Bowl", "Oscars", "Grammy Awards",
-        "Stranger Things", "Game of Thrones", "The Avengers", "Batman", "Iron Man",
-        "Billie Eilish", "Ariana Grande", "The Weeknd", "Kanye West", "Rihanna",
-        "Breaking Bad", "Friends", "The Office", "Squid Game", "Wednesday Addams",
-        "Avatar", "Titanic", "Jurassic Park", "Pokémon", "Mario", "Minecraft",
-        "Harry Styles", "Dwayne Johnson", "Tom Cruise", "Jennifer Lawrence", "Elon Musk",
-        "LeBron James", "Cristiano Ronaldo", "Tom Brady", "Serena Williams", "Messi"
-      ]
-    },
-    history: {
-      name: "History",
-      icon: "📜",
-      words: [
-        "Abraham Lincoln", "George Washington", "Winston Churchill", "Napoleon Bonaparte",
-        "Julius Caesar", "Cleopatra", "Martin Luther King Jr", "Rosa Parks", "Albert Einstein",
-        "Leonardo da Vinci", "Christopher Columbus", "Marco Polo", "Joan of Arc",
-        "Alexander the Great", "Genghis Khan", "Benjamin Franklin", "Thomas Edison",
-        "Wright Brothers", "Neil Armstrong", "Amelia Earhart", "World War II", "Civil War",
-        "American Revolution", "French Revolution", "Cold War", "Great Depression",
-        "Industrial Revolution", "Renaissance", "Ancient Egypt", "Roman Empire",
-        "Ancient Greece", "Pyramids", "Great Wall of China", "Colosseum", "Taj Mahal",
-        "Declaration of Independence", "Constitution", "Magna Carta", "Berlin Wall",
-        "Titanic", "Pearl Harbor", "D-Day", "Apollo 11", "Salem Witch Trials",
-        "Boston Tea Party", "Gold Rush", "Oregon Trail", "Wild West", "Vikings"
-      ]
-    },
-    food: {
-      name: "Food & Drink",
-      icon: "🍕",
-      words: [
-        "Cheeseburger", "Sushi", "Tacos", "Spaghetti", "Pancakes", "Ice Cream", "Chocolate",
-        "Coffee", "Coca-Cola", "Starbucks", "McDonald's", "Pizza Hut", "Subway",
-        "Cheesecake", "Brownies", "Cookies", "Donuts", "Croissant", "Bagel", "Muffin",
-        "Chicken Wings", "French Fries", "Nachos", "Popcorn", "Hot Dog", "Pretzel",
-        "Milkshake", "Smoothie", "Lemonade", "Orange Juice", "Energy Drink", "Tea",
-        "Bacon", "Eggs", "Cereal", "Toast", "Sandwich", "Burrito", "Quesadilla",
-        "Ramen", "Pho", "Pad Thai", "Curry", "Dumplings", "Spring Rolls", "Sashimi",
-        "Barbecue", "Steak", "Lobster", "Shrimp"
-      ]
-    },
-    sports: {
-      name: "Sports & Games",
-      icon: "⚽",
-      words: [
-        "Super Bowl", "World Cup", "Olympics", "March Madness", "World Series",
-        "NBA Finals", "Stanley Cup", "Wimbledon", "Masters Tournament", "Tour de France",
-        "Boxing", "Wrestling", "MMA", "Karate", "Judo", "Taekwondo", "Fencing",
-        "Swimming", "Diving", "Gymnastics", "Track and Field", "Marathon", "Triathlon",
-        "Volleyball", "Beach Volleyball", "Badminton", "Table Tennis", "Tennis",
-        "Golf", "Bowling", "Billiards", "Darts", "Archery", "Skateboarding",
-        "Snowboarding", "Skiing", "Ice Skating", "Hockey", "Lacrosse", "Rugby",
-        "Cricket", "Baseball", "Softball", "Soccer", "Football", "Basketball",
-        "Surfing", "Rock Climbing", "Cheerleading", "Yoga"
-      ]
-    },
-    technology: {
-      name: "Technology",
-      icon: "💻",
-      words: [
-        "iPhone", "Samsung", "Google", "Amazon", "Apple", "Microsoft", "Tesla",
-        "Facebook", "Twitter", "YouTube", "Snapchat", "WhatsApp", "Zoom", "Spotify",
-        "PlayStation", "Xbox", "Nintendo Switch", "Virtual Reality", "Artificial Intelligence",
-        "Laptop", "Desktop", "Tablet", "Smartwatch", "AirPods", "Headphones",
-        "Smartphone", "Bluetooth", "WiFi", "5G", "Internet", "Email", "Text Message",
-        "Video Call", "Social Media", "Streaming", "Cloud Storage", "Password",
-        "Keyboard", "Mouse", "Touchscreen", "Camera", "Selfie", "Screenshot",
-        "USB Drive", "Hard Drive", "Processor", "Graphics Card", "Gaming PC",
-        "Smart Home", "Alexa", "Siri", "Robot Vacuum", "Drone", "3D Printer"
-      ]
-    }
-  };
 
   const [currentWord, setCurrentWord] = useState('');
   const [timeLeft, setTimeLeft] = useState(60);
@@ -281,9 +190,13 @@ const CatchphraseGame = () => {
   };
 
   const continueToScoreboard = () => {
-    // Auto-update scores based on words guessed
-    setTeam1Score(prev => prev + roundStats.team1Correct.length);
-    setTeam2Score(prev => prev + roundStats.team2Correct.length);
+    // Only the team in possession when time ended gets 1 point
+    // Correct guesses are for statistical tracking only, not scoring
+    if (losingTeam === 1) {
+      setTeam1Score(prev => prev + 1);
+    } else if (losingTeam === 2) {
+      setTeam2Score(prev => prev + 1);
+    }
     setShowStats(true);
     stopTickSound();
   };
@@ -307,9 +220,31 @@ const CatchphraseGame = () => {
   };
 
   const nextRound = () => {
+    setIsPlaying(false);
+    setIsPaused(false);
+    setGameOver(false);
     setShowScoreboard(false);
     setShowCategorySelect(true);
     setSelectedCategory(null);
+    setTimeLeft(60);
+    setWordTimeLeft(15);
+    setCurrentWord('');
+    setUsedWords([]);
+    setShowPassWarning(false);
+    setCurrentTeam(1);
+    setRoundStats({ team1Correct: [], team2Correct: [], skipped: [] });
+    setShowStats(false);
+    setShowStealPrompt(false);
+    setLosingTeam(null);
+    stopTickSound();
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (wordTimerRef.current) {
+      clearInterval(wordTimerRef.current);
+      wordTimerRef.current = null;
+    }
   };
 
   const restartRound = () => {
