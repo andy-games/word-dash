@@ -190,11 +190,12 @@ const CatchphraseGame = () => {
   };
 
   const continueToScoreboard = () => {
-    // Only the team in possession when time ended gets 1 point
+    // The team that was NOT in possession when time ended gets 1 point
     // Correct guesses are for statistical tracking only, not scoring
-    if (losingTeam === 1) {
+    const winningTeam = losingTeam === 1 ? 2 : 1;
+    if (winningTeam === 1) {
       setTeam1Score(prev => prev + 1);
-    } else if (losingTeam === 2) {
+    } else {
       setTeam2Score(prev => prev + 1);
     }
     setShowStats(true);
@@ -208,11 +209,12 @@ const CatchphraseGame = () => {
 
   const handleSteal = (didSteal) => {
     if (didSteal) {
+      // If they steal, they get an additional point (they already got 1 point when time ran out)
       const winningTeam = losingTeam === 1 ? 2 : 1;
       if (winningTeam === 1) {
-        setTeam1Score(prev => prev + 2);
+        setTeam1Score(prev => prev + 1);
       } else {
-        setTeam2Score(prev => prev + 2);
+        setTeam2Score(prev => prev + 1);
       }
     }
     setShowStealPrompt(false);
